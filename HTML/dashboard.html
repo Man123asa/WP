@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html ng-app="DashApp">
+<head>
+	<meta charset="UTF-8">
+	<title>Foundry | Dashboard</title>
+
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.2/angular.min.js"></script>
+	<link rel="stylesheet" href="css/style.css">
+	<link href="https://fonts.googleapis.com" rel="stylesheet">
+
+	<style>
+		[ng-cloak] {display:none !important;}
+		.viewport {margin-left:220px;padding:60px;min-height:100vh;}
+	</style>
+
+</head>
+
+<body ng-controller="DashController" ng-cloak>
+	<nav class="sidebar">
+		<div class="brand">Foundry<span>.</span></div>
+		<ul>
+			<li ng-click="tab='validate'" ng-class="{active:tab=='validate'}"> Validator </li>
+			<li ng-click="tab='history'" ng-class="{active:tab=='history'}"> History </li>
+			<li ng-click="tab='profile'" ng-class="{active:tab=='profile'}"> Profile </li>
+		</ul>
+		<div style="margin-top:auto; padding:20px;">
+			<li ng-click="logout()" style="color:#d63031; border:none; cursor:pointer;"> Logout </li>
+		</div>
+	</nav>
+	<main class="viewport">
+		<div class="view-pane" ng-if="tab=='validate'">
+			<h1>New Analysis</h1>
+			<div class="card">
+				<label>Business Concept</label>
+				<!-- Use form.newIdea to fix ng-if scope issues -->
+				<textarea ng-model="form.newIdea" placeholder="Enter your business logic..."></textarea>
+				<button class="btn-action" ng-click="analyze()"> Run Analysis </button>
+			</div>
+		</div>
+		<div class="view-pane" ng-if="tab=='history'">
+			<h1>Validation History</h1>
+			<div class="history-list">
+				<div ng-repeat="item in history" class="history-item">
+					<div>
+						<h3>{{item.statement}}</h3>
+						<p>{{item.reasons}}</p>
+					</div>
+					<div class="badge" ng-class="item.category.toLowerCase().replace(' ','-')"> {{item.category}}</div>
+				</div>
+				<p ng-if="history.length==0" style="color:#999">No history found.</p>
+			</div>
+		</div>
+		<div class="view-pane" ng-if="tab=='profile'">
+			<h1>Profile</h1>
+			<div class="card">
+				<p>User: <strong>{{userName}}</strong></p>
+				<p>Email: <strong>{{userEmail}}</strong></p>
+			</div>
+		</div>
+	</main>
+	<script>
+		if (typeof angular === 'undefined') 
+		{
+			alert("Library Error: Please ensure you are connected to the internet.");
+		}
+		var app=angular.module('DashApp',[]);
+		app.controller('DashController',function($scope, $http) 
+		{
+			// Initialize view and data
+			$scope.tab='validate'; 
+			$scope.form={newIdea:""}; 
+			
+			// Load profile data from localStorage (ensure these keys match index.html)
+			$scope.userEmail=localStorage.getItem('userEmail')||'Not Logged In';
+			$scope.userName=localStorage.getItem('userName')||'Founder';
+			$scope.history=[];
+			
+			$scope.analyze=function() 
+			{
+				// Check form.newIdea instead of newIdea
+				if(!$scope.form.newIdea) return alert("Please enter a concept.");
+				
+				$http
+				({
+					method:'POST',
+					url:'http://localhost:8080/StartupValidator/api/ideas',
+					params:{statement:$scope.form.newIdea,email:$scope.userEmail }
+				})
+				.then(function() 
+				{
+					alert("Analysis complete! View in History.");
+					$scope.form.newIdea="";
+				}, 
+				function(error) 
+				{
+					console.error("Connection Error:", error);
+					alert("Connection error: Ensure Tomcat is running.");
+				});
+			};
+
+			$scope.loadHistory=function() 
+			{
+				$http.get('http://localhost:8080/StartupValidator/api/ideas?email='+$scope.userEmail).then(function(res) 
+				{
+					$scope.history=res.data;
+				});
+			};
+
+			$scope.logout = function() 
+			{
+				localStorage.clear();
+				window.location.href='index.html';
+			};
+
+			$scope.$watch('tab',function(newVal) 
+			{
+				if(newVal=='history') $scope.loadHistory();
+			});
+		});
+	</script>
+</body>
+</html>

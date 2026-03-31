@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Foundry | Startup Validator</title>
+	<link href="https://fonts.googleapis.com" rel="stylesheet">
+
+	<style>
+		:root 
+		{	--bg:#fbfbfb;
+			--white:#ffffff;
+			--border:#ebebeb;
+			--text:#333333;
+			--pastel-green:#e8f5e9;
+			--dark-green:#2d6a4f;
+		}
+		body 
+		{	margin:0;
+			font-family:'Inter',sans-serif;
+			background:var(--bg);
+			display:flex;
+			justify-content:center;
+			align-items:center;
+			height:100vh;
+		}
+		.auth-card 
+		{	background:var(--white);
+			border:1px solid var(--border);
+			border-radius:12px;
+			padding:40px;
+			width:350px;
+			box-shadow:0 4px 6px rgba(0,0,0,0.02);
+		}
+		.brand 
+		{
+			text-align:center;
+			font-size:24px;
+			font-weight:600;
+			margin-bottom:30px;
+		}
+		.brand span 
+		{color:var(--dark-green);}
+	
+		input 
+		{
+			width:100%;
+			padding:12px;
+			margin-bottom:15px;
+			border:1px solid var(--border);
+			border-radius:6px;
+			background:#fafafa;
+			box-sizing:border-box;
+			outline:none;
+		}
+
+		.btn-action 
+		{
+			width:100%;
+			background:var(--dark-green);
+			color:white;
+			border:none;
+			padding:14px;
+			border-radius:6px;
+			font-weight:600;
+			cursor:pointer;
+		}
+		.error-msg 
+		{
+			color:#d63031;
+			font-size:12px;
+			margin-bottom:10px;
+			display:none;
+		}
+		.toggle-link 
+		{
+			text-align:center;
+			margin-top:20px;
+			font-size:14px;
+			color:#777;
+		}
+	
+		.toggle-link span 
+		{
+			color:var(--dark-green);
+			cursor:pointer;
+			font-weight:600;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="auth-container">
+		<div class = "brand"> Foundry <span>.</span></div>		
+		<div id="loginBox" class="auth-card">
+			<h2 style="margin-top:0"> Login </h2>
+			<input type="text" id="logUser" placeholder="Username">
+			<input type="password" id="logPass" placeholder="Password">
+			<button class="btn-action" onclick="handleLogin()">Sign In</button>
+			<div class="toggle-link">New? <span onclick="toggleAuth('signup')">Sign Up</span></div>
+		</div>
+		<div id="signupBox" class="auth-card" style="display:none">
+
+			<h2 style="margin-top:0"> Sign Up </h2>
+
+			<input type="email" id="regEmail" placeholder="Email Address">
+			<div id="emailErr" class="error-msg">Invalid email format</div>
+			<input type="text" id="regUser" placeholder="Username">
+			<input type="password" id="regPass" placeholder="Password">
+			<input type="password" id="regConfirm" placeholder="Confirm Password">
+			<div id="passErr" class="error-msg">Passwords do not match</div>
+			<button class="btn-action" onclick="handleSignup()">Create Account</button>
+			<div class="toggle-link">Member? <span onclick="toggleAuth('login')">Login</span></div>
+		</div>
+	</div>
+
+	<script>
+		function toggleAuth(t)
+		{
+			document.getElementById('loginBox').style.display=t==='login'?'block':'none';
+			document.getElementById('signupBox').style.display=t==='signup'?'block':'none';
+		}
+
+		function handleSignup()
+		{
+			const email=document.getElementById('regEmail').value;
+			const user=document.getElementById('regUser').value;
+			const pass=document.getElementById('regPass').value;
+			const conf=document.getElementById('regConfirm').value;
+			
+			if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+				document.getElementById('emailErr').style.display='block'; return;
+			}
+			if(pass!==conf || pass===""){
+				document.getElementById('passErr').style.display='block'; return;
+			}
+
+			fetch('api/auth?action=signup&username='+user+'&email='+email+'&password='+pass,{method:'POST'})
+			.then(res=>res.text()).then(data=>{
+				if(data.trim()==="success") {
+					// Save to localStorage for Dashboard Profile
+					localStorage.setItem('userEmail', email);
+					localStorage.setItem('userName', user);
+					window.location.href='dashboard.html';
+				}
+			});
+		}
+
+		function handleLogin()
+		{
+			const user=document.getElementById('logUser').value;
+			const pass=document.getElementById('logPass').value;
+
+			fetch('api/auth?action=login&username='+user+'&password='+pass,{method:'POST'})
+			.then(res=>{ 
+				if(res.status===200) {
+					localStorage.setItem('userName', user);					 
+					localStorage.setItem('userEmail', user + "@foundry.com"); 
+					window.location.href='dashboard.html'; 
+				} else {
+					alert("Invalid Login"); 
+				}
+			});
+		}
+	</script>
+</body>
+</html>
